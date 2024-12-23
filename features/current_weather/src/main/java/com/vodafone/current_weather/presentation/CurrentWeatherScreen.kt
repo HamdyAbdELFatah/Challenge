@@ -14,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.vodafone.shared_ui.component.MainAppBar
@@ -55,7 +56,7 @@ fun CurrentWeatherScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Button(
                             onClick = { onNavigateToForecast(city) },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE60000))
                         ) {
                             Text("See 7-Day Forecast", color = MaterialTheme.colorScheme.onPrimary)
                         }
