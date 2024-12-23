@@ -24,9 +24,6 @@ class CityInputViewModel @Inject constructor(
     private val _lastSearchedWeather = MutableStateFlow<Weather?>(null)
     val lastSearchedWeather: StateFlow<Weather?> = _lastSearchedWeather.asStateFlow()
 
-    init {
-        getLastSearchedWeather()
-    }
 
     fun updateCityName(city: String) {
         _cityName.value = city

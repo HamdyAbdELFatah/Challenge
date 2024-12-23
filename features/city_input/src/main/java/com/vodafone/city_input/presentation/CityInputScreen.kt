@@ -38,7 +38,9 @@ fun CityInputScreen(
     val city by viewModel.cityName.collectAsState()
     val lastSearchedWeather by viewModel.lastSearchedWeather.collectAsState()
     var isEmptyError by remember { mutableStateOf(false) }
-
+    LaunchedEffect(Unit) {
+        viewModel.getLastSearchedWeather()
+    }
     Scaffold(
         topBar = { MainAppBar() }
     ) { contentPadding ->
