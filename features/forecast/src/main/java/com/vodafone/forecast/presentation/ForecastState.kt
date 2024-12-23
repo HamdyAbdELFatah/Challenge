@@ -8,7 +8,3 @@ sealed class ForecastState {
     data class Success(val data: WeatherForecast?) : ForecastState()
     data class Error(val message: String) : ForecastState()
 }
-
-sealed class ForecastEvent {
-    data class NavigateToDetails(val day: String) : ForecastEvent()
-}
