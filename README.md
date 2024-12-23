@@ -1,4 +1,6 @@
-# Weather Forecast
+# Weather Forecast   
+<img src="https://github.com/user-attachments/assets/453e97d7-05a2-4e4f-a816-353572733bab" width="150" />
+
 **Weather Now & Later** is a modularized Android application that provides current weather information and a 7-day weather forecast for a given city. The app features a clean architecture using MVVM and MVI patterns, implements dependency injection with Dagger-Hilt, and includes a basic CI/CD pipeline. The app also supports dark mode.
 
 ## Features
