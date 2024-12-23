@@ -39,7 +39,6 @@ android {
 
 dependencies {
 
-    api(project(":weather-lib"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -58,7 +57,7 @@ dependencies {
     // lottie
     implementation(libs.lottie)
     // my lib
-    api(libs.hamdy.icons.conditions)
+    api(project(":weather-lib"))
     implementation(project(":core"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
