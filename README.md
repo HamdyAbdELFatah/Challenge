@@ -63,7 +63,7 @@ The app is modularized into the following modules:
 
 ## Unit Testing
 
-Unit tests cover at least 80% of the code. The app uses **JUnit** for testing and **Mockito** for mocking dependencies.
+Unit tests cover at least 80% of the code. The app uses **JUnit** for testing and **Mockk** for mocking dependencies.
 
 To run the unit tests:
 
