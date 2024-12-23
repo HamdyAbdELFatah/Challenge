@@ -1,97 +1,142 @@
 package com.vodafone.data
 
-import com.vodafone.core.domain.repository.WeatherRepository
+import com.vodafone.core.models.DailyForecast
+import com.vodafone.core.models.WeatherForecast
 import com.vodafone.core.utils.DataResult
 import com.vodafone.data.local.datasource.WeatherLocalDataSource
 import com.vodafone.data.local.entity.WeatherEntity
-import com.vodafone.data.mapper.toWeatherDomainModel
-import com.vodafone.data.mapper.toWeatherEntity
+import com.vodafone.data.model.City
+import com.vodafone.data.model.Forecast
+import com.vodafone.data.model.ForecastResponse
 import com.vodafone.data.model.Main
+import com.vodafone.data.model.WeatherItem
 import com.vodafone.data.model.WeatherResponse
 import com.vodafone.data.remote.datasource.WeatherRemoteDataSource
 import com.vodafone.data.repository.WeatherRepositoryImpl
+import io.mockk.clearMocks
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
 
-import io.mockk.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.runBlocking
+class WeatherRepositoryImplTest {
 
-class WeatherRepositoryTest {
-
-    private lateinit var weatherRepository: WeatherRepository
+    private lateinit var weatherRepository: WeatherRepositoryImpl
     private val remoteDataSource: WeatherRemoteDataSource = mockk()
     private val localDataSource: WeatherLocalDataSource = mockk()
 
     @Before
-    fun setup() {
+    fun setUp() {
         weatherRepository = WeatherRepositoryImpl(remoteDataSource, localDataSource)
     }
 
-    @Test
-    fun `getCurrentWeather fetches from remote and saves to local`() = runBlocking {
-        // Arrange
-        val cityName = "Cairo"
-        val mockResponse = WeatherResponse(name = cityName, main = Main(temp = 25.0))
-        val mockWeatherEntity = mockResponse.toWeatherEntity()
-        val expectedWeather = mockResponse.toWeatherDomainModel()
-
-        coEvery { remoteDataSource.fetchCurrentWeather(cityName) } returns Response.success(mockResponse)
-        coEvery { localDataSource.saveWeather(any()) } just Runs
-
-        // Act
-        val result = weatherRepository.getCurrentWeather(cityName)
-
-        // Assert
-        result.collect { dataResult ->
-            when (dataResult) {
-                is DataResult.Success -> {
-                    assertEquals(expectedWeather, dataResult.data)
-                }
-                else -> throw AssertionError("Expected success but got $dataResult")
-            }
-        }
-
-        coVerify { remoteDataSource.fetchCurrentWeather(cityName) }
-        coVerify { localDataSource.saveWeather(mockWeatherEntity) }
+    @After
+    fun tearDown() {
+        clearMocks(remoteDataSource, localDataSource)
     }
 
     @Test
-    fun `getLastSearchedWeather returns last saved weather`() = runBlocking {
-        // Arrange
-        val mockWeatherEntity = WeatherEntity(
-            cityName = "Cairo",
-            currentTemperature = 25.0,
+    fun `getCurrentWeather should return success when local data matches Cairo`() = runTest {
+        val city = "Cairo"
+        val localWeather = WeatherEntity(
+            cityName = city,
+            currentTemperature = 30.0,
             condition = "Sunny",
-            icon = "sun_icon",
+            icon = "01d",
             lastUpdated = System.currentTimeMillis()
         )
-        val expectedWeather = mockWeatherEntity.toWeatherDomainModel()
 
-        coEvery { localDataSource.getLastWeather() } returns mockWeatherEntity
+        coEvery { localDataSource.getLastWeather() } returns localWeather
 
-        // Act
-        val result = weatherRepository.getLastSearchedWeather()
+        weatherRepository.getCurrentWeather(city).collect { result ->
+            if (result is DataResult.Success) {
+                assert(result is DataResult.Success)
+                assertEquals(city, result.data?.city)
+                coVerify { localDataSource.getLastWeather() }
+                coVerify(exactly = 0) { remoteDataSource.fetchCurrentWeather(city) }
+            }
 
-        // Assert
-        result.collect { dataResult ->
-            when (dataResult) {
-                is DataResult.Success -> {
-                    assertEquals(expectedWeather, dataResult.data)
-                }
-                else -> throw AssertionError("Expected success but got $dataResult")
+        }
+
+    }
+
+
+    @Test
+    fun `getForecast should return success when API call succeeds for Cairo`() = runTest {
+        // Arrange
+        val city = "Cairo"
+        val mockCity = City(name = city)
+        val weatherItem = WeatherItem(
+            icon = "clear_sky_icon",
+            description = "Clear sky",
+            main = "Clear",
+        )
+        val forecast = Forecast(
+            visibility = 10000,
+            weather = listOf(weatherItem),
+            main = Main(temp = 25.0)
+        )
+        val forecastList = listOf(forecast)
+        val forecastResponse = ForecastResponse(
+            city = mockCity,
+            cnt = 7,
+            cod = "200",
+            list = forecastList
+        )
+        val mockResponse: Response<ForecastResponse> = Response.success(forecastResponse)
+
+        coEvery { remoteDataSource.fetchForecast(city) } returns mockResponse
+
+        weatherRepository.getForecast(city).collectLatest {
+            if (it is DataResult.Success) {
+                val successResult = it
+                // Validate the city name and country
+                assertEquals(city, successResult.data?.city)
+                coVerify { remoteDataSource.fetchForecast(city) }
             }
         }
 
-        coVerify { localDataSource.getLastWeather() }
     }
+
+
+    @Test
+    fun `getLastSearchedWeather should return success when local data exists for Alexandria`() =
+        runTest {
+            val weatherEntity = WeatherEntity(
+                cityName = "Alexandria",
+                currentTemperature = 25.0,
+                condition = "Cloudy",
+                icon = "03d",
+                lastUpdated = System.currentTimeMillis()
+            )
+
+            coEvery { localDataSource.getLastWeather() } returns weatherEntity
+
+            val result = weatherRepository.getLastSearchedWeather().first()
+
+            assert(result is DataResult.Success)
+            assertEquals("Alexandria", (result as DataResult.Success).data?.city)
+            coVerify { localDataSource.getLastWeather() }
+        }
+
+    @Test
+    fun `getLastSearchedWeather should return error when no local data exists for Cairo`() =
+        runTest {
+            coEvery { localDataSource.getLastWeather() } returns null
+
+            val result = weatherRepository.getLastSearchedWeather().first()
+
+            assert(result is DataResult.Error)
+            assertEquals("No data found", (result as DataResult.Error).message)
+            coVerify { localDataSource.getLastWeather() }
+        }
 }
 

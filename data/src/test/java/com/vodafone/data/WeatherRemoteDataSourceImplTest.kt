@@ -31,14 +31,14 @@ class WeatherRemoteDataSourceImplTest {
     @Test
     fun `fetchCurrentWeather returns correct data`() = runBlocking {
         // Arrange
-        val cityName = "London"
+        val cityName = "Cairo"
         val mockResponse = Response.success(
             WeatherResponse(
                 visibility = 10000,
                 timezone = 3600,
                 main = Main(temp = 20.0, tempMin = 15.0, seaLevel = 1013),
                 weather = listOf(WeatherItem(icon = "01d", description = "clear sky", main = "Clear", id = 800)),
-                name = "London"
+                name = "Cairo"
             )
         )
 
@@ -50,16 +50,16 @@ class WeatherRemoteDataSourceImplTest {
         // Assert
         assertEquals(mockResponse, result)
         result.body()?.main?.temp?.let { assertEquals(20.0, it, 0.0) }
-        assertEquals("London", result.body()?.name)
+        assertEquals("Cairo", result.body()?.name)
     }
 
     @Test
     fun `fetchForecast returns correct data`(): Unit = runBlocking {
         // Arrange
-        val cityName = "New York"
+        val cityName = "Cairo"
         val mockForecast = ForecastResponse(
-            city = City(country = "US", name = "New York"),
-            cnt = 5,
+            city = City(country = "Egypt", name = "Cairo"),
+            cnt = 7,
             cod = "200",
             message = 0,
             list = listOf(
@@ -81,7 +81,7 @@ class WeatherRemoteDataSourceImplTest {
 
         // Assert
         assertEquals(mockResponse, result)
-        assertEquals("New York", result.body()?.city?.name)
+        assertEquals("Cairo", result.body()?.city?.name)
         result.body()?.list?.first()?.main?.temp?.let { assertEquals(12.0, it, 0.0) }
     }
 
