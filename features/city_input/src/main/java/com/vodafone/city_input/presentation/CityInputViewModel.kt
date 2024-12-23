@@ -33,7 +33,7 @@ class CityInputViewModel @Inject constructor(
     }
 
 
-    private fun getLastSearchedWeather() = viewModelScope.launch {
+    fun getLastSearchedWeather() = viewModelScope.launch {
         getLastSearchedWeatherUseCase().collect { result ->
             when (result) {
                 is DataResult.Success -> {
